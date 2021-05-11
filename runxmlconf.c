@@ -595,6 +595,7 @@ main(int argc ATTRIBUTE_UNUSED, char **argv ATTRIBUTE_UNUSED) {
 
     if (logfile != NULL)
         fclose(logfile);
+    printf("%s: runxmlconf\n", (ret == 0) ? "PASS" : "FAIL");
     return(ret);
 }
 

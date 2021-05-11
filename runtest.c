@@ -4512,6 +4512,7 @@ launchTests(testDescPtr tst) {
     xmlCharEncCloseFunc(ebcdicHandler);
     xmlCharEncCloseFunc(eucJpHandler);
 
+    printf("%s: %s\n", (err == 0) ? "PASS" : "FAIL", tst->desc);
     return(err);
 }
 
@@ -4594,6 +4595,7 @@ main(int argc ATTRIBUTE_UNUSED, char **argv ATTRIBUTE_UNUSED) {
     xmlCleanupParser();
     xmlMemoryDump();
 
+    printf("%s: runtest\n\n", (ret == 0) ? "PASS" : "FAIL");
     return(ret);
 }
 
