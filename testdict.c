@@ -440,5 +440,6 @@ int main(void)
     clean_strings();
     xmlCleanupParser();
     xmlMemoryDump();
+    printf("%s: testdict\n\n", (ret == 0) ? "PASS" : "FAIL");
     return(ret);
 }

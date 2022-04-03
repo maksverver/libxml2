@@ -1634,5 +1634,6 @@ main(int argc ATTRIBUTE_UNUSED, char **argv ATTRIBUTE_UNUSED) {
     xmlCleanupParser();
     xmlMemoryDump();
 
+    printf("%s: testlimits\n", (ret == 0) ? "PASS" : "FAIL");
     return(ret);
 }
