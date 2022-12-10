@@ -3292,7 +3292,7 @@ xmlXPathOrderDocElems(xmlDocPtr doc) {
     cur = doc->children;
     while (cur != NULL) {
 	if (cur->type == XML_ELEMENT_NODE) {
-	    cur->content = (void *) (-(++count));
+	    cur->content = (void *) (intptr_t) (-(++count));
 	    if (cur->children != NULL) {
 		cur = cur->children;
 		continue;

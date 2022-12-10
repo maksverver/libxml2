@@ -2902,7 +2902,7 @@ xmlParserInputBufferCreateFd(int fd, xmlCharEncoding enc) {
 
     ret = xmlAllocParserInputBuffer(enc);
     if (ret != NULL) {
-        ret->context = (void *) (ptrdiff_t) fd;
+        ret->context = (void *) (intptr_t) fd;
 	ret->readcallback = xmlFdRead;
 	ret->closecallback = xmlFdClose;
     }
@@ -2979,7 +2979,7 @@ xmlOutputBufferCreateFd(int fd, xmlCharEncodingHandlerPtr encoder) {
 
     ret = xmlAllocOutputBufferInternal(encoder);
     if (ret != NULL) {
-        ret->context = (void *) (ptrdiff_t) fd;
+        ret->context = (void *) (intptr_t) fd;
 	ret->writecallback = xmlFdWrite;
 	ret->closecallback = NULL;
     }

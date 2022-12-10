@@ -49,6 +49,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <libxml/xmlmemory.h>
@@ -1375,7 +1376,7 @@ xmlAddSpecialAttr(xmlParserCtxtPtr ctxt,
         return;
 
     xmlHashAddEntry2(ctxt->attsSpecial, fullname, fullattr,
-                     (void *) (ptrdiff_t) type);
+                     (void *) (intptr_t) type);
     return;
 
 mem_error:
