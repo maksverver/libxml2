@@ -4935,6 +4935,311 @@ automataTest(const char *filename, const char *result,
 
 #endif /* LIBXML_AUTOMATA_ENABLED */
 
+static int g_xmlsec_parser_default_options = XML_PARSE_NONET | XML_PARSE_NODICT | XML_PARSE_HUGE;
+static int xmlSecParserGetDefaultOptions(void) { return (g_xmlsec_parser_default_options); }
+
+static void xmlSecParsePrepareCtxt(xmlParserCtxtPtr ctxt) {
+    if (ctxt == NULL)
+        fatalError();
+
+    ctxt->loadsubset = 2 | 4;
+    ctxt->replaceEntities = 1;
+
+    xmlCtxtUseOptions(ctxt, xmlSecParserGetDefaultOptions());
+}
+
+/**
+ * xmlSecParseFileTest:
+ * @filename: the file containing XML data
+ * @result: the result of the parsing process
+ * @err: the file with error messages: unused
+ * @options: unused
+ * 
+ * Test case automatically generated from xmlsec.
+ * The test case parses a file containing XML data
+ * and creates a context. 
+ *
+ * Returns 0 in case of success, an error code otherwise
+ * 
+ * XML Security Library is released under the MIT Licence 
+ */
+static int
+xmlSecParseFileTest(const char *filename, const char *result,
+                    const char *err ATTRIBUTE_UNUSED, int options ATTRIBUTE_UNUSED) {
+
+    int ret;
+    xmlParserCtxtPtr ctxt;
+    char *temp;
+    FILE *out;
+    temp = resultFilename(filename, temp_directory, ".res");
+    if (temp == NULL) {
+        fprintf(stderr, "out of memory\n");
+        fatalError();
+    }
+    out = fopen(temp, "wb");
+
+    if (filename == NULL)
+        return (-1);
+
+    xmlInitParser();
+    ctxt = xmlCreateFileParserCtxt(filename);
+
+    if (ctxt == NULL) {
+        fprintf(out, "Failed to create context\n");
+        free(temp);
+        fclose(out);
+        return (-1);
+    }
+
+    xmlSecParsePrepareCtxt(ctxt);
+
+    if (ctxt->directory == NULL) {
+        ctxt->directory = xmlParserGetDirectory(filename);
+        if (ctxt->directory == NULL)
+        fprintf(out, "Could not get directory\n");
+        fclose(out);
+        free(temp);
+        return (-1);
+    }
+
+    ret = xmlParseDocument(ctxt);
+
+    if (ret < 0) {
+        fprintf(out, "Failed to parse document\n");
+        fclose(out);
+        free(temp);
+        return (-1);
+    }
+
+    if (!ctxt->wellFormed) {
+        fprintf(out, "Document is not well formed\n");
+        fclose(out);
+        free(temp);
+        return (-1);
+    }
+
+    if (ctxt != NULL) {
+        if (ctxt->myDoc != NULL)
+        {
+        fprintf(out, "Parsed document");
+        xmlFreeDoc(ctxt->myDoc);
+        ctxt->myDoc = NULL;
+        }
+        xmlFreeParserCtxt(ctxt);
+    }
+
+    if (compareFiles(temp, result)) {
+        fprintf(stderr, "Got a difference for %s\n", filename);
+        ret = 1;
+    }
+    fclose(out);
+    free(temp);
+    return (ret);
+}
+
+static char *readData(const char *filename, size_t *size) {
+    FILE *stream;
+    char line[100];
+    char *token;
+    char *buffer;
+    int c;
+    unsigned int x;
+    stream = fopen(filename, "r");
+    if (stream == NULL) {
+        fprintf(stderr, "could not open test file");
+        fclose(stream);
+        return NULL;
+    }
+
+    if (fgets(line, 100, stream) != NULL) {
+        token = strtok(line, "=");
+        if (strncmp(token, "size", 5) == 0) {
+        token = strtok(NULL, "=");
+        sscanf(token, "%u", &x);
+        *size = x;
+        }
+        else {
+        fprintf(stderr, "Incorrect test file format. Could not read buffer size");
+        fclose(stream);
+        return NULL;
+        }
+    }
+
+    buffer = (char *)malloc(*size);
+    if (buffer == NULL) {
+        fprintf(stderr, "Failed to allocate memory");
+        return NULL;
+    }
+    c = fread(buffer, sizeof(char), *size, stream);
+    if (c == 0) {
+        fprintf(stderr, "Did not read buffer data from file");
+        fclose(stream);
+        return NULL;
+    }
+    fclose(stream);
+    return buffer;
+}
+
+/**
+ * xmlSecParseMemoryTest:
+ * @filename: the file containing the data to use for the test
+ * @result: the result of the parsing process
+ * @err: the file with error messages: unused
+ * @options: unused
+ * 
+ * Test case automatically generated from xmlsec.
+ * The test case parses a buffer containing XML data
+ * and creates a context. 
+ *
+ * Returns 0 in case of success, an error code otherwise
+ * 
+ * XML Security Library is released under the MIT Licence 
+ */
+static int 
+xmlSecParseMemoryTest(const char *filename, const char *result,
+                    const char *err ATTRIBUTE_UNUSED, int options ATTRIBUTE_UNUSED) {
+
+    size_t size = 0;
+    char *buffer;
+    char *temp;
+    FILE *out;
+    xmlParserCtxtPtr ctxt;
+    int len;
+    int ret;
+    buffer = readData(filename, &size);
+    if (size == 0) {
+        fprintf(stderr, "Could not read data");
+        return -1;
+    }
+
+    temp = resultFilename(filename, temp_directory, ".res");
+    if (temp == NULL) {
+        fprintf(stderr, "out of memory\n");
+        free(buffer);
+        fatalError();
+    }
+
+    out = fopen(temp, "wb");
+
+    if (buffer == NULL) {
+        fprintf(out, "Could not allocate memory\n");
+        free(temp);
+        fclose(out);
+        return (-1);
+    }
+
+    if (size > (size_t)(INT_MAX)) {
+        fprintf(out, "Size is greater than INT_MAX\n");
+        free(buffer);
+        free(temp);
+        fclose(out);
+        return (-1);
+    }
+
+    len = (int)(size);
+
+    ctxt = xmlCreateMemoryParserCtxt((char *)buffer, len);
+
+    if (ctxt == NULL) {
+        fprintf(out, "Failed to create context\n");
+        free(buffer);
+        free(temp);
+        fclose(out);
+        return (-1);
+    }
+
+    xmlSecParsePrepareCtxt(ctxt);
+
+    ret = xmlParseDocument(ctxt);
+
+    if (ret < 0) {
+        fprintf(out, "Failed to parse document\n");
+        free(buffer);
+        free(temp);
+        fclose(out);
+        return (-1);
+    }
+
+    if (!ctxt->wellFormed) {
+        if (ctxt->myDoc != NULL) {
+        xmlFreeDoc(ctxt->myDoc);
+        ctxt->myDoc = NULL;
+        }
+        xmlFreeParserCtxt(ctxt);
+        fprintf(out, "Buffer is not well formed!\n");
+        free(buffer);
+        free(temp);
+        fclose(out);
+        return (-1);
+    }
+
+    fprintf(out, "Parsed buffer");
+    if (compareFiles(temp, result)) {
+        fprintf(stderr, "Got a difference for %s\n", filename);
+        ret = 1;
+    }
+    xmlFreeDoc(ctxt->myDoc);
+    ctxt->myDoc = NULL;
+    xmlFreeParserCtxt(ctxt);
+    fclose(out);
+    free(temp);
+    free(buffer);
+    return (ret);
+}
+
+/**
+ * xmlSecCreateTreeTest:
+ *
+ * Test case automatically generated from xmlsec.
+ * The test case generates a new document root node
+ * and associates a namespace to the node.
+ *
+ * Returns 0 in case of success, an error code otherwise
+ * 
+ * XML Security Library is released under the MIT Licence 
+ */
+
+static int 
+xmlSecCreateTreeTest(const char *filename ATTRIBUTE_UNUSED, const char *result ATTRIBUTE_UNUSED,
+                    const char *err ATTRIBUTE_UNUSED, int options ATTRIBUTE_UNUSED) {
+  const xmlChar *rootNodeName = (xmlChar *)"Keys";
+  const xmlChar *rootNodeNs = (xmlChar *)"-2086400512";
+  xmlDocPtr doc;
+  xmlNodePtr root;
+  xmlNsPtr ns;
+  if (rootNodeName == NULL){
+    rootNodeNs = NULL;
+    return (-1);
+  }
+  
+  doc = xmlNewDoc((xmlChar *)"1.0");
+  if (doc == NULL){
+    rootNodeName = NULL;
+    rootNodeNs = NULL;
+    return (-1);
+  }
+  
+  root = xmlNewDocNode(doc, NULL, rootNodeName, NULL);
+  if (root == NULL) {
+    rootNodeName = NULL;
+    rootNodeNs = NULL;
+    xmlFreeDoc(doc);
+    return (-1);
+  }
+  xmlDocSetRootElement(doc, root);
+  ns = xmlNewNs(root, rootNodeNs, NULL);
+  if (ns == NULL) {
+    rootNodeName = NULL;
+    rootNodeNs = NULL;
+    xmlFreeDoc(doc);
+    return (-1);
+  }
+  xmlSetNs(root, ns);
+  rootNodeName = NULL;
+  rootNodeNs = NULL;
+  xmlFreeDoc(doc);
+  return(0);
+}
 /************************************************************************
  *									*
  *			Tests Descriptions				*
@@ -5152,7 +5457,16 @@ testDesc testDescriptions[] = {
       automataTest, "./test/automata/*", "result/automata/", "", NULL,
       0 },
 #endif
-    {NULL, NULL, NULL, NULL, NULL, NULL, 0}
+    { "XmlSec autogenerated file test" ,
+     xmlSecParseFileTest, "./test/xmlsec/parseFile/*", "result/xmlsec/parseFile", "", NULL,
+      0 },
+    { "XmlSec autogenerated memory test" ,
+     xmlSecParseMemoryTest, "./test/xmlsec/parseMemory/*", "result/xmlsec/parseMemory", "", NULL,
+      0 },
+    { "XmlSec autogenerated create tree test" ,
+     xmlSecCreateTreeTest, NULL,NULL,NULL, NULL, 
+      0 },
+     {NULL, NULL, NULL, NULL, NULL, NULL, 0}
 };
 
 /************************************************************************
