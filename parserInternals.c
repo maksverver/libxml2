@@ -2858,10 +2858,10 @@ xmlInitParserCtxt(xmlParserCtxtPtr ctxt)
 
 /**
  * xmlFreeParserCtxt:
- * @ctxt:  an XML parser context
+ * @ctxt:  an XML parser context. The context should be obtained from an API such as xmlNewSAXParserCtxt and should not have been previously freed.
  *
  * Free all the memory used by a parser context. However the parsed
- * document in ctxt->myDoc is not freed.
+ * document in ctxt->myDoc is not freed. The caller should not attempt to access or dereference the ctxt parameter after invoking xmlFreeParserCtxt.
  */
 
 void

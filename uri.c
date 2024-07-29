@@ -1019,7 +1019,7 @@ xmlParseURI(const char *str) {
 
 /**
  * xmlParseURIReference:
- * @uri:  pointer to an URI structure
+ * @uri:  pointer to an URI structure. The caller should initialize this pointer using APIs such as xmlCreateURI. This parameter must not be NULL.
  * @str:  the string to analyze
  *
  * Parse an URI reference string based on RFC 3986 and fills in the
