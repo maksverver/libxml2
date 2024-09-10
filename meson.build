@@ -33,8 +33,10 @@ dir_locale = dir_prefix / get_option('localedir')
 host_os = host_machine.system()
 
 cygwin = 'cygwin'
+darwin = 'darwin'
 windows = 'windows'
 sys_cygwin = cygwin.contains(host_os)
+sys_darwin = darwin.contains(host_os)
 sys_windows = windows.contains(host_os)
 
 libxml2_cflags = []
@@ -453,11 +455,37 @@ foreach file : xml_opt_src
     endif
 endforeach
 
+if sys_windows
+    # Windows does support versioned symbols, but we'd have to pre-process our
+    # syms file. Skip for now.
+    version_script_flags = ''
+elif sys_darwin
+    # macOS libraries don't support symbol versioning.
+    version_script_flags = ''
+else
+    version_script_flags = '-Wl,--version-script='
+endif
+
+xml_lib_link_args = [ ]
+
+if want_legacy and version_script_flags != ''
+    xml_lib_link_args += cc.get_supported_link_arguments([
+        '-Wl,--undefined-version',
+    ])
+
+    xml_lib_syms_path = '@0@/libxml2.syms'.format(meson.current_source_dir())
+    xml_lib_link_args += '@0@@1@'.format(
+        version_script_flags,
+        xml_lib_syms_path,
+    )
+endif
+
 v_min_compat = 0
 xml_lib = library(
     'xml2',
     files(xml_src),
     c_args: libxml2_cflags,
+    link_args: xml_lib_link_args,
     dependencies: xml_deps,
     include_directories: config_dir,
     install: true,
