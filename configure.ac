@@ -444,6 +444,7 @@ if test "$lt_cv_prog_gnu_ld" = yes; then
 else
   case $host in
   *-*-sunos*) VERSION_SCRIPT_FLAGS="-Wl,-M -Wl,";;
+  *-*-solaris*) VERSION_SCRIPT_FLAGS="-Wl,-M -Wl,";;
   esac
 fi
 AC_SUBST(VERSION_SCRIPT_FLAGS)
