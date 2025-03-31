@@ -518,6 +518,12 @@ if want_catalog and want_output
     )
 endif
 
+## additional symlink
+
+install_symlink('libxml',
+                install_dir : dir_include,
+                pointing_to : dir_pkginclude / 'libxml')
+
 ## testdso module
 
 testdso_mod = shared_module(
