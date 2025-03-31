@@ -275,6 +275,10 @@ libxml_charPtrConstWrap(const char *str)
         return (Py_None);
     }
     ret = PY_IMPORT_STRING(str);
+    if (ret == NULL) {
+        Py_INCREF(Py_None);
+        return (Py_None);
+    }
     return (ret);
 }
 
