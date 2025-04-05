@@ -237,7 +237,9 @@ xmlPythonFileReadImpl (PyObject *file, const char * method_name, char * buffer, 
     char *data;
 
     if (file == NULL) return(-1);
-    ret = PyObject_CallMethod(file, method_name, "(i)", len);
+    /* When read() returns a string, the length is in characters not bytes, so
+       request at most len / 4 characters to leave space for UTF-8 encoding. */
+    ret = PyObject_CallMethod(file, method_name, "(i)", len / 4);
     if (ret == NULL) {
 	printf("xmlPythonFileReadImpl: result is NULL\n");
 	return(-1);
@@ -247,19 +249,25 @@ xmlPythonFileReadImpl (PyObject *file, const char * method_name, char * buffer, 
 #ifdef PyUnicode_Check
     } else if (PyUnicode_Check (ret)) {
 #if PY_VERSION_HEX >= 0x03030000
-        Py_ssize_t size;
+	Py_ssize_t size;
 	const char *tmp;
 
-	/* tmp doesn't need to be deallocated */
-        tmp = PyUnicode_AsUTF8AndSize(ret, &size);
+	/* `tmp` will be deallocated together with `ret` */
+	tmp = PyUnicode_AsUTF8AndSize(ret, &size);
+	if (tmp == NULL) {
+	    printf("xmlPythonFileReadImpl: failed to convert to UTF-8\n");
+	    Py_DECREF(ret);
+	    return(-1);
+	}
 
 	lenread = (int) size;
 	data = (char *) tmp;
 #else
-        PyObject *b;
+	PyObject *b;
 	b = PyUnicode_AsUTF8String(ret);
 	if (b == NULL) {
 	    printf("xmlPythonFileReadImpl: failed to convert to UTF-8\n");
+	    Py_DECREF(ret);
 	    return(-1);
 	}
 	lenread = PyBytes_Size(b);
@@ -272,10 +280,12 @@ xmlPythonFileReadImpl (PyObject *file, const char * method_name, char * buffer, 
 	Py_DECREF(ret);
 	return(-1);
     }
-    if (lenread > len)
-	memcpy(buffer, data, len);
-    else
-	memcpy(buffer, data, lenread);
+    if (lenread > len) {
+	printf("xmlPythonFileReadImpl: length exceeds buffer size\n");
+	Py_DECREF(ret);
+	return(-1);
+    }
+    memcpy(buffer, data, lenread);
     Py_DECREF(ret);
     return(lenread);
 }
