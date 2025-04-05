@@ -219,27 +219,27 @@ xmlPythonFileCloseRaw (void * context) {
 }
 
 /**
- * xmlPythonFileReadRaw:
+ * xmlPythonFileReadImpl:
+ * @method_name:  name of the read method to call
  * @context:  the I/O context
  * @buffer:  where to drop data
  * @len:  number of bytes to write
  *
- * Read @len bytes to @buffer from the Python file in the I/O channel
+ * Read up to @len bytes to @buffer using the specified method,
+ * which may return either a unicode string or bytes
  *
- * Returns the number of bytes read
+ * Returns the number of bytes read, or -1 on error
  */
 static int
-xmlPythonFileReadRaw (void * context, char * buffer, int len) {
-    PyObject *file;
+xmlPythonFileReadImpl (PyObject *file, const char * method_name, char * buffer, int len) {
     PyObject *ret;
     int lenread = -1;
     char *data;
 
-    file = (PyObject *) context;
     if (file == NULL) return(-1);
-    ret = PyObject_CallMethod(file, (char *) "read", (char *) "(i)", len);
+    ret = PyObject_CallMethod(file, method_name, "(i)", len);
     if (ret == NULL) {
-	printf("xmlPythonFileReadRaw: result is NULL\n");
+	printf("xmlPythonFileReadImpl: result is NULL\n");
 	return(-1);
     } else if (PyBytes_Check(ret)) {
 	lenread = PyBytes_Size(ret);
@@ -259,7 +259,7 @@ xmlPythonFileReadRaw (void * context, char * buffer, int len) {
         PyObject *b;
 	b = PyUnicode_AsUTF8String(ret);
 	if (b == NULL) {
-	    printf("xmlPythonFileReadRaw: failed to convert to UTF-8\n");
+	    printf("xmlPythonFileReadImpl: failed to convert to UTF-8\n");
 	    return(-1);
 	}
 	lenread = PyBytes_Size(b);
@@ -268,7 +268,7 @@ xmlPythonFileReadRaw (void * context, char * buffer, int len) {
 #endif
 #endif
     } else {
-	printf("xmlPythonFileReadRaw: result is not a String\n");
+	printf("xmlPythonFileReadImpl: result is not a String\n");
 	Py_DECREF(ret);
 	return(-1);
     }
@@ -281,65 +281,35 @@ xmlPythonFileReadRaw (void * context, char * buffer, int len) {
 }
 
 /**
+ * xmlPythonFileReadRaw:
+ * @context:  the I/O context
+ * @buffer:  where to drop data
+ * @len:  maximum number of bytes to write
+ *
+ * Read up to @len bytes from the Python file into @buffer
+ * using the read() method
+ *
+ * Returns the number of bytes read, or -1 on error
+ */
+static int
+xmlPythonFileReadRaw (void * context, char * buffer, int len) {
+    return(xmlPythonFileReadImpl((PyObject *) context, "read", buffer, len));
+}
+
+/**
  * xmlPythonFileRead:
  * @context:  the I/O context
  * @buffer:  where to drop data
- * @len:  number of bytes to write
+ * @len:  maximum number of bytes to write
  *
- * Read @len bytes to @buffer from the I/O channel.
+ * Read up to @len bytes from the ioWrapper into @buffer
+ * using the io_read() method
  *
- * Returns the number of bytes read
+ * Returns the number of bytes read, or -1 on error
  */
 static int
 xmlPythonFileRead (void * context, char * buffer, int len) {
-    PyObject *file;
-    PyObject *ret;
-    int lenread = -1;
-    char *data;
-
-    file = (PyObject *) context;
-    if (file == NULL) return(-1);
-    ret = PyObject_CallMethod(file, (char *) "io_read", (char *) "(i)", len);
-    if (ret == NULL) {
-	printf("xmlPythonFileRead: result is NULL\n");
-	return(-1);
-    } else if (PyBytes_Check(ret)) {
-	lenread = PyBytes_Size(ret);
-	data = PyBytes_AsString(ret);
-#ifdef PyUnicode_Check
-    } else if (PyUnicode_Check (ret)) {
-#if PY_VERSION_HEX >= 0x03030000
-        Py_ssize_t size;
-	const char *tmp;
-
-	/* tmp doesn't need to be deallocated */
-        tmp = PyUnicode_AsUTF8AndSize(ret, &size);
-
-	lenread = (int) size;
-	data = (char *) tmp;
-#else
-        PyObject *b;
-	b = PyUnicode_AsUTF8String(ret);
-	if (b == NULL) {
-	    printf("xmlPythonFileRead: failed to convert to UTF-8\n");
-	    return(-1);
-	}
-	lenread = PyBytes_Size(b);
-	data = PyBytes_AsString(b);
-	Py_DECREF(b);
-#endif
-#endif
-    } else {
-	printf("xmlPythonFileRead: result is not a String\n");
-	Py_DECREF(ret);
-	return(-1);
-    }
-    if (lenread > len)
-	memcpy(buffer, data, len);
-    else
-	memcpy(buffer, data, lenread);
-    Py_DECREF(ret);
-    return(lenread);
+    return(xmlPythonFileReadImpl((PyObject *) context, "io_read", buffer, len));
 }
 
 #ifdef LIBXML_OUTPUT_ENABLED
