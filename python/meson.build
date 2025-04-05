@@ -29,8 +29,15 @@ if py.found() == true
         'libxml2.py',
         input: [files('libxml.py'), pygenerated[3]],
         output: 'libxml2.py',
-        command: [find_program('cat'), '@INPUT@'],
-        capture: true,
+        command: [
+            py,
+            '-c',
+            'import sys; open(sys.argv[3], "w").write(open(sys.argv[1], "r").read() + open(sys.argv[2], "r").read())',
+            '@INPUT0@',
+            '@INPUT1@',
+            '@OUTPUT@'
+        ],
+        capture: false,
         install: true,
         install_dir: py.get_install_dir(),
     )
